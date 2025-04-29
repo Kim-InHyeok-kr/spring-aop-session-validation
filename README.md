@@ -53,12 +53,15 @@ public Object sesssionCheck(JoinPoint joinPoint) throws Throwable {
 
   try {
     switch (methodName) {
+
     case "EmpStatusMeWorkModi":
       sessionCheckService.EmpStatusMeSessionCheck(params);
       break;
+
     case "setEmpStatusScheduleRegInfo":
       sessionCheckService.EmpStatusPlanSessionCheck(params);
       break;
+
     case "getSMSInfo":
       sessionCheckService.SMSSessionCheck(params);
       break;
