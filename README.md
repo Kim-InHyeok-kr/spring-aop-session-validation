@@ -39,34 +39,40 @@
 ## 3. 구현 소스 예제
 
 ```java
-@Around("execution(* com.vntg.app.controller.api.EmpController.*(..))")
+@Around("execution(* com.vntg.app.controller.api.emp.EmpController.EmpStatusMeWorkModi(..)) || " +
+        "execution(* com.vntg.app.controller.api.emp.EmpController.setEmpStatusScheduleRegInfo(..)) || " +
+        "execution(* com.vntg.app.controller.api.msg.MsgController.getSMSInfo(..))")
 public Object sesssionCheck(JoinPoint joinPoint) throws Throwable {
 
-    String apiAddress = joinPoint.getSignature().toShortString(); // 호출된 메서드명 추출
-    Object[] args = joinPoint.getArgs(); // 메서드 파라미터 추출
+  String methodName = joinPoint.getSignature().getName(); //메소드 명
+  Object[] args = joinPoint.getArgs();
 
-    try {
-        // ISO27001 - 세션 데이터를 이용한 사용자 검증
-        if (apiAddress.startsWith("EmpStatusMeWorkModi")) {
-            Map<String, Object> params = convertToMap(args);
-            logger.info("sesssionCheck() - EmpStatusMeWorkModi = params : {}", params.toString());
-            sessionCheckService.EmpStatusMeSessionCheck(params);
+  Map<String, Object> params = apiComm.setAopSessionData(args); // 세선 데이터
 
-        } else if (apiAddress.startsWith("setEmpStatusScheduleRegInfo")) {
-            Map<String, Object> params = convertToMap(args);
-            logger.info("sesssionCheck() - setEmpStatusScheduleRegInfo = params : {}", params.toString());
-            sessionCheckService.EmpStatusPlanSessionCheck(params);
-        }
+  logger.info("SessionCheckAop :: sessionCheck() - methodName:{}, params:{}", methodName, params);
 
-    } catch (Exception e) {
-        logger.error("sesssionCheck error : {}", e);
-        throw new Exception(APIResCode.CD_ERROR); // 공통 에러 처리
+  try {
+    switch (methodName) {
+    case "EmpStatusMeWorkModi":
+      sessionCheckService.EmpStatusMeSessionCheck(params);
+      break;
+    case "setEmpStatusScheduleRegInfo":
+      sessionCheckService.EmpStatusPlanSessionCheck(params);
+      break;
+    case "getSMSInfo":
+      sessionCheckService.SMSSessionCheck(params);
+      break;
     }
+    
+  } catch (Exception e) {
+    logger.error("SessionCheckAop :: sessionCheck - error : {}", e);
+    throw new Exception(APIResCode.CD_ERROR);
+  }
+  
+  // 타겟 메서드 실행
+  Object result = ((ProceedingJoinPoint) joinPoint).proceed();
 
-    // 타겟 메서드 실제 실행
-    Object result = ((ProceedingJoinPoint) joinPoint).proceed();
-
-    return result;
+  return result;
 }
 ```
 
